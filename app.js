@@ -204,6 +204,22 @@
  *  6. Global error handler  ← MUST be last
  */
 
+/**
+ * @file app.js
+ * @description Express application setup — middleware stack, routes, and error handlers.
+ *
+ * Intentionally kept separate from server.js so the app instance can be
+ * imported in tests without starting a real HTTP server or DB connection.
+ *
+ * Load order (matters for Express):
+ *  1. Security middleware  (helmet, cors, mongo-sanitize)
+ *  2. Body / cookie parsing
+ *  3. Request logger
+ *  4. API routes
+ *  5. 404 handler
+ *  6. Global error handler  ← MUST be last
+ */
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -257,7 +273,7 @@ app.use(
 );
 
 // Respond to preflight OPTIONS requests for every route
-app.options('*', cors());
+app.options('/{*path}', cors());
 
 // ─── 2. Body & Cookie Parsing ─────────────────────────────────────────────────
 
