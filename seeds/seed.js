@@ -11,12 +11,12 @@
  * ┌──────────────────────────────┬───────────┬──────────────────────┐
  * │ Email                        │ Role      │ Password             │
  * ├──────────────────────────────┼───────────┼──────────────────────┤
- * │ admin@nagar.dev              │ admin     │ Admin@1234           │
- * │ manager.one@nagar.dev        │ manager   │ Manager@1234         │
- * │ manager.two@nagar.dev        │ manager   │ Manager@1234         │
- * │ alice@nagar.dev              │ employee  │ Employee@1234        │
- * │ bob@nagar.dev                │ employee  │ Employee@1234        │
- * │ carol@nagar.dev              │ employee  │ Employee@1234        │
+ * │ aman@gmail.com               │ admin     │ Admin@1234           │
+ * │ nidhi@gmail.com              │ manager   │ Manager@1234         │
+ * │ Amansingh@gmail.com          │ manager   │ Manager@1234         │
+ * │ alice@gmail.com              │ employee  │ Employee@1234        │
+ * │ bob@gmail.com                │ employee  │ Employee@1234        │
+ * │ carol@gmail.com              │ employee  │ Employee@1234        │
  * └──────────────────────────────┴───────────┴──────────────────────┘
  *
  * Alice and Bob report to manager.one; Carol reports to manager.two.
