@@ -3,6 +3,7 @@
  * @description HTTP handlers for all Assignment management endpoints.
  *
  * Access control matrix:
+<<<<<<< HEAD
  * ┌────────────────────────────────────────────┬───────┬─────────┬──────────┐
  * │ Action                                     │ Admin │ Manager │ Employee │
  * ├────────────────────────────────────────────┼───────┼─────────┼──────────┤
@@ -21,11 +22,29 @@
  *    rather than save() to avoid rewriting the full document on every check-in.
  *  - All list queries use lean() for maximum throughput.
  *
+=======
+ * ┌──────────────────────────────────────────────────┬───────┬─────────┬──────────┐
+ * │ Action                                           │ Admin │ Manager │ Employee │
+ * ├──────────────────────────────────────────────────┼───────┼─────────┼──────────┤
+ * │ POST   /assignments                              │  ✓    │  ✓      │  ✗       │
+ * │ GET    /assignments?date=&employeeId=            │  ✓    │  ✓ *    │  ✓ **    │
+ * │ GET    /assignments/:id                          │  ✓    │  ✓ *    │  ✓ **    │
+ * │ PATCH  /assignments/:id/centers/:centerId        │  ✓    │  ✓ *    │  ✓ **    │
+ * │ POST   /assignments/:id/end                      │  ✓    │  ✓ *    │  ✓ **    │
+ * └──────────────────────────────────────────────────┴───────┴─────────┴──────────┘
+ * (*  Manager can only access assignments on routes they manage)
+ * (** Employee can only access their own assignments)
+ *
+>>>>>>> dc283fc (Initial commit)
  * @module controllers/assignment
  */
 
 import Assignment, { ASSIGNMENT_STATUS, VISIT_STATUS } from '../models/assignment.model.js';
 import Route from '../models/route.model.js';
+<<<<<<< HEAD
+=======
+import LocationLog from '../models/locationLog.model.js';
+>>>>>>> dc283fc (Initial commit)
 import AppError from '../utils/appError.js';
 import { sendSuccess } from '../utils/responseHandler.js';
 import { paginateQuery } from '../utils/pagination.js';
@@ -35,6 +54,7 @@ import { USER_ROLES } from '../models/user.model.js';
 
 /**
  * Creates a new assignment — assigns a route to an employee for a date.
+<<<<<<< HEAD
  *
  * Steps:
  *  1. Validate the route exists and belongs to the caller's company.
@@ -43,13 +63,18 @@ import { USER_ROLES } from '../models/user.model.js';
  *  4. Denormalise companyId from the route onto the assignment.
  *  5. Save — unique index prevents duplicate on { employeeId, routeId, date }.
  *
+=======
+>>>>>>> dc283fc (Initial commit)
  * @type {import('express').RequestHandler}
  */
 export const createAssignment = async (req, res, next) => {
    try {
       const { employeeId, routeId, date } = req.body;
 
+<<<<<<< HEAD
       // ── Fetch route and validate company ownership ────────────────────────────
+=======
+>>>>>>> dc283fc (Initial commit)
       const route = await Route.findOne({
          _id: routeId,
          companyId: req.user.companyId,
@@ -60,7 +85,10 @@ export const createAssignment = async (req, res, next) => {
          return next(new AppError('Route not found or is inactive.', 404));
       }
 
+<<<<<<< HEAD
       // ── Manager check: can only assign routes they manage ─────────────────────
+=======
+>>>>>>> dc283fc (Initial commit)
       if (
          req.user.role === USER_ROLES.MANAGER &&
          String(route.managerId) !== String(req.user.sub)
@@ -68,8 +96,11 @@ export const createAssignment = async (req, res, next) => {
          return next(new AppError('You can only assign routes that you manage.', 403));
       }
 
+<<<<<<< HEAD
       // ── Pre-populate visitStatuses from route centers ─────────────────────────
       // Sorted by order so the mobile app gets them in visit sequence immediately.
+=======
+>>>>>>> dc283fc (Initial commit)
       const visitStatuses = [...route.centers]
          .sort((a, b) => a.order - b.order)
          .map((center) => ({
@@ -82,14 +113,21 @@ export const createAssignment = async (req, res, next) => {
       const assignment = await Assignment.create({
          employeeId,
          routeId,
+<<<<<<< HEAD
          companyId: req.user.companyId, // denormalised from route
+=======
+         companyId: req.user.companyId,
+>>>>>>> dc283fc (Initial commit)
          date,
          status: ASSIGNMENT_STATUS.PENDING,
          visitStatuses,
          assignedBy: req.user.sub,
       });
 
+<<<<<<< HEAD
       // Populate for the response so the caller gets names, not just IDs
+=======
+>>>>>>> dc283fc (Initial commit)
       await assignment.populate([
          { path: 'employeeId', select: 'name email role' },
          { path: 'routeId', select: 'name centers' },
@@ -111,6 +149,7 @@ export const createAssignment = async (req, res, next) => {
 
 /**
  * Returns a filtered, paginated list of assignments.
+<<<<<<< HEAD
  *
  * Query params:
  *  - date        {string}  ISO date string — filter by assignment date (required for employees)
@@ -125,6 +164,8 @@ export const createAssignment = async (req, res, next) => {
  *  - Manager:  filtered to routes they manage (via a Route lookup).
  *  - Admin:    full company scope.
  *
+=======
+>>>>>>> dc283fc (Initial commit)
  * @type {import('express').RequestHandler}
  */
 export const listAssignments = async (req, res, next) => {
@@ -133,16 +174,23 @@ export const listAssignments = async (req, res, next) => {
 
       const filter = { companyId: req.user.companyId };
 
+<<<<<<< HEAD
       // ── Role scoping ──────────────────────────────────────────────────────────
       if (req.user.role === USER_ROLES.EMPLOYEE) {
          // Employees can only see their own assignments
+=======
+      if (req.user.role === USER_ROLES.EMPLOYEE) {
+>>>>>>> dc283fc (Initial commit)
          filter.employeeId = req.user.sub;
       } else if (employeeId) {
          filter.employeeId = employeeId;
       }
 
       if (req.user.role === USER_ROLES.MANAGER) {
+<<<<<<< HEAD
          // Scope to routes this manager owns
+=======
+>>>>>>> dc283fc (Initial commit)
          const managerRouteIds = await Route.find(
             { companyId: req.user.companyId, managerId: req.user.sub, isActive: true },
             { _id: 1 },
@@ -184,8 +232,11 @@ export const listAssignments = async (req, res, next) => {
 
 /**
  * Returns a single assignment with full route and employee details.
+<<<<<<< HEAD
  * Also computes and attaches a progress summary.
  *
+=======
+>>>>>>> dc283fc (Initial commit)
  * @type {import('express').RequestHandler}
  */
 export const getAssignment = async (req, res, next) => {
@@ -212,6 +263,7 @@ export const getAssignment = async (req, res, next) => {
 
 /**
  * Updates the visit status of a single center within an assignment.
+<<<<<<< HEAD
  *
  * This is the hot path — called by the mobile app every time an employee
  * checks in at a center. Designed for maximum write efficiency:
@@ -224,6 +276,8 @@ export const getAssignment = async (req, res, next) => {
  *  - Employees can only update their OWN assignments.
  *  - Admins and managers can update any assignment in scope.
  *
+=======
+>>>>>>> dc283fc (Initial commit)
  * @type {import('express').RequestHandler}
  */
 export const updateCenterVisit = async (req, res, next) => {
@@ -234,7 +288,10 @@ export const updateCenterVisit = async (req, res, next) => {
       const assignment = await resolveAssignmentWithAccess(req, next);
       if (!assignment) return;
 
+<<<<<<< HEAD
       // Locate the target visitStatus entry
+=======
+>>>>>>> dc283fc (Initial commit)
       const vsIndex = assignment.visitStatuses.findIndex(
          (vs) => String(vs.centerId) === String(centerId),
       );
@@ -243,8 +300,11 @@ export const updateCenterVisit = async (req, res, next) => {
          return next(new AppError('Center not found in this assignment.', 404));
       }
 
+<<<<<<< HEAD
       // ── Build the targeted $set update ───────────────────────────────────────
       // Using the positional operator path avoids rewriting the full array.
+=======
+>>>>>>> dc283fc (Initial commit)
       const updateFields = {
          [`visitStatuses.${vsIndex}.status`]: status,
       };
@@ -253,12 +313,18 @@ export const updateCenterVisit = async (req, res, next) => {
          updateFields[`visitStatuses.${vsIndex}.note`] = note;
       }
 
+<<<<<<< HEAD
       // Server-side timestamp — never trust the client clock
+=======
+>>>>>>> dc283fc (Initial commit)
       if (status === VISIT_STATUS.VISITED) {
          updateFields[`visitStatuses.${vsIndex}.visitedAt`] = new Date();
       }
 
+<<<<<<< HEAD
       // ── Set startedAt on first check-in ───────────────────────────────────────
+=======
+>>>>>>> dc283fc (Initial commit)
       const isFirstCheckIn = !assignment.startedAt &&
          assignment.visitStatuses.every((vs) => vs.status === VISIT_STATUS.PENDING);
 
@@ -267,7 +333,10 @@ export const updateCenterVisit = async (req, res, next) => {
          updateFields.status = ASSIGNMENT_STATUS.IN_PROGRESS;
       }
 
+<<<<<<< HEAD
       // ── Check if this update completes the entire assignment ──────────────────
+=======
+>>>>>>> dc283fc (Initial commit)
       const updatedStatuses = assignment.visitStatuses.map((vs, i) =>
          i === vsIndex ? { ...vs.toObject(), status } : vs.toObject(),
       );
@@ -279,7 +348,10 @@ export const updateCenterVisit = async (req, res, next) => {
          updateFields.completedAt = new Date();
       }
 
+<<<<<<< HEAD
       // ── Single atomic write ───────────────────────────────────────────────────
+=======
+>>>>>>> dc283fc (Initial commit)
       const updated = await Assignment.findByIdAndUpdate(
          id,
          { $set: updateFields },
@@ -298,6 +370,7 @@ export const updateCenterVisit = async (req, res, next) => {
    }
 };
 
+<<<<<<< HEAD
 // ─── Private Helpers ──────────────────────────────────────────────────────────
 
 /**
@@ -309,6 +382,109 @@ export const updateCenterVisit = async (req, res, next) => {
  * @param {import('express').Request}       req
  * @param {import('express').NextFunction}  next
  * @returns {Promise<import('mongoose').Document|null>}
+=======
+// ─── POST /assignments/:id/end ────────────────────────────────────────────────
+
+/**
+ * Ends an active duty session for an assignment.
+ *
+ * Steps:
+ *  1. Resolve assignment with RBAC (employee can only end their own).
+ *  2. Guard: only 'in_progress' assignments can be ended.
+ *  3. Mark any remaining 'pending' centers as 'skipped'.
+ *  4. Set status → 'completed', completedAt → now.
+ *  5. Calculate session stats (duration, distance, visited count).
+ *  6. Return stats so the mobile app can show the SessionSummaryModal.
+ *
+ * @type {import('express').RequestHandler}
+ */
+export const endAssignment = async (req, res, next) => {
+   try {
+      const assignment = await resolveAssignmentWithAccess(req, next);
+      if (!assignment) return;
+
+      // Guard: can only end an in-progress assignment
+      if (assignment.status !== ASSIGNMENT_STATUS.IN_PROGRESS) {
+         return next(
+            new AppError(
+               `Cannot end an assignment with status '${assignment.status}'. Only 'in_progress' assignments can be ended.`,
+               400,
+            ),
+         );
+      }
+
+      const now = new Date();
+
+      // Mark remaining pending centers as skipped
+      const updatedVisitStatuses = assignment.visitStatuses.map((vs) => {
+         if (vs.status === VISIT_STATUS.PENDING) {
+            return { ...vs.toObject(), status: VISIT_STATUS.SKIPPED };
+         }
+         return vs.toObject();
+      });
+
+      // Calculate duration in milliseconds
+      const startedAt = assignment.startedAt ?? now;
+      const durationMs = now.getTime() - new Date(startedAt).getTime();
+
+      // Count visited centers
+      const centersVisited = updatedVisitStatuses.filter(
+         (vs) => vs.status === VISIT_STATUS.VISITED,
+      ).length;
+      const centersTotal = updatedVisitStatuses.length;
+
+      // Calculate total distance from location logs
+      let distanceKm = 0;
+      try {
+         const logs = await LocationLog.find(
+            { assignmentId: assignment._id },
+            { lat: 1, lng: 1, timestamp: 1 },
+         ).sort({ timestamp: 1 }).lean();
+
+         for (let i = 1; i < logs.length; i++) {
+            distanceKm += haversineKm(
+               logs[i - 1].lat, logs[i - 1].lng,
+               logs[i].lat, logs[i].lng,
+            );
+         }
+         distanceKm = Math.round(distanceKm * 100) / 100; // round to 2 decimal places
+      } catch {
+         // Distance calculation is non-critical — proceed with 0 if it fails
+         distanceKm = 0;
+      }
+
+      // Persist the final state atomically
+      await Assignment.findByIdAndUpdate(
+         assignment._id,
+         {
+            $set: {
+               status: ASSIGNMENT_STATUS.COMPLETED,
+               completedAt: now,
+               visitStatuses: updatedVisitStatuses,
+            },
+         },
+         { runValidators: true },
+      );
+
+      return sendSuccess(res, 200, 'Duty ended successfully.', {
+         assignmentId: String(assignment._id),
+         durationMs,
+         distanceKm,
+         centersVisited,
+         centersTotal,
+         startedAt: startedAt.toISOString(),
+         completedAt: now.toISOString(),
+      });
+   } catch (error) {
+      return next(error);
+   }
+};
+
+// ─── Private Helpers ──────────────────────────────────────────────────────────
+
+/**
+ * Resolves an Assignment document with RBAC.
+>>>>>>> dc283fc (Initial commit)
  */
 async function resolveAssignmentWithAccess(req, next) {
    const { id } = req.params;
@@ -326,7 +502,10 @@ async function resolveAssignmentWithAccess(req, next) {
       return null;
    }
 
+<<<<<<< HEAD
    // Manager: verify the assignment's route is one they manage
+=======
+>>>>>>> dc283fc (Initial commit)
    if (req.user.role === USER_ROLES.MANAGER) {
       const route = await Route.findOne({
          _id: assignment.routeId,
@@ -341,3 +520,30 @@ async function resolveAssignmentWithAccess(req, next) {
 
    return assignment;
 }
+<<<<<<< HEAD
+=======
+
+/**
+ * Calculates the Haversine distance between two GPS coordinates in kilometres.
+ *
+ * @param {number} lat1
+ * @param {number} lon1
+ * @param {number} lat2
+ * @param {number} lon2
+ * @returns {number} Distance in kilometres
+ */
+function haversineKm(lat1, lon1, lat2, lon2) {
+   const R = 6371; // Earth radius in km
+   const dLat = toRad(lat2 - lat1);
+   const dLon = toRad(lon2 - lon1);
+   const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function toRad(deg) {
+   return deg * (Math.PI / 180);
+}
+>>>>>>> dc283fc (Initial commit)
