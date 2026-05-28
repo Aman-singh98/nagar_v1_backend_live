@@ -3,26 +3,6 @@
  * @description HTTP handlers for all Assignment management endpoints.
  *
  * Access control matrix:
-<<<<<<< HEAD
- * ┌────────────────────────────────────────────┬───────┬─────────┬──────────┐
- * │ Action                                     │ Admin │ Manager │ Employee │
- * ├────────────────────────────────────────────┼───────┼─────────┼──────────┤
- * │ POST   /assignments                        │  ✓    │  ✓      │  ✗       │
- * │ GET    /assignments?date=&employeeId=      │  ✓    │  ✓ *    │  ✓ **    │
- * │ GET    /assignments/:id                    │  ✓    │  ✓ *    │  ✓ **    │
- * │ PATCH  /assignments/:id/centers/:centerId  │  ✓    │  ✓ *    │  ✓ **    │
- * └────────────────────────────────────────────┴───────┴─────────┴──────────┘
- * (*  Manager can only access assignments on routes they manage)
- * (** Employee can only access their own assignments)
- *
- * Performance notes:
- *  - POST /assignments pre-populates visitStatuses from Route.centers at creation
- *    so the mobile app never needs to fetch the route separately.
- *  - PATCH /center uses $set on the specific array element via positional operator
- *    rather than save() to avoid rewriting the full document on every check-in.
- *  - All list queries use lean() for maximum throughput.
- *
-=======
  * ┌──────────────────────────────────────────────────┬───────┬─────────┬──────────┐
  * │ Action                                           │ Admin │ Manager │ Employee │
  * ├──────────────────────────────────────────────────┼───────┼─────────┼──────────┤
@@ -35,16 +15,19 @@
  * (*  Manager can only access assignments on routes they manage)
  * (** Employee can only access their own assignments)
  *
->>>>>>> dc283fc (Initial commit)
+ * Performance notes:
+ *  - POST /assignments pre-populates visitStatuses from Route.centers at creation
+ *    so the mobile app never needs to fetch the route separately.
+ *  - PATCH /center uses $set on the specific array element via positional operator
+ *    rather than save() to avoid rewriting the full document on every check-in.
+ *  - All list queries use lean() for maximum throughput.
+ *
  * @module controllers/assignment
  */
 
 import Assignment, { ASSIGNMENT_STATUS, VISIT_STATUS } from '../models/assignment.model.js';
 import Route from '../models/route.model.js';
-<<<<<<< HEAD
-=======
 import LocationLog from '../models/locationLog.model.js';
->>>>>>> dc283fc (Initial commit)
 import AppError from '../utils/appError.js';
 import { sendSuccess } from '../utils/responseHandler.js';
 import { paginateQuery } from '../utils/pagination.js';
@@ -54,7 +37,6 @@ import { USER_ROLES } from '../models/user.model.js';
 
 /**
  * Creates a new assignment — assigns a route to an employee for a date.
-<<<<<<< HEAD
  *
  * Steps:
  *  1. Validate the route exists and belongs to the caller's company.
@@ -63,18 +45,13 @@ import { USER_ROLES } from '../models/user.model.js';
  *  4. Denormalise companyId from the route onto the assignment.
  *  5. Save — unique index prevents duplicate on { employeeId, routeId, date }.
  *
-=======
->>>>>>> dc283fc (Initial commit)
  * @type {import('express').RequestHandler}
  */
 export const createAssignment = async (req, res, next) => {
    try {
       const { employeeId, routeId, date } = req.body;
 
-<<<<<<< HEAD
       // ── Fetch route and validate company ownership ────────────────────────────
-=======
->>>>>>> dc283fc (Initial commit)
       const route = await Route.findOne({
          _id: routeId,
          companyId: req.user.companyId,
@@ -85,10 +62,7 @@ export const createAssignment = async (req, res, next) => {
          return next(new AppError('Route not found or is inactive.', 404));
       }
 
-<<<<<<< HEAD
       // ── Manager check: can only assign routes they manage ─────────────────────
-=======
->>>>>>> dc283fc (Initial commit)
       if (
          req.user.role === USER_ROLES.MANAGER &&
          String(route.managerId) !== String(req.user.sub)
@@ -96,11 +70,8 @@ export const createAssignment = async (req, res, next) => {
          return next(new AppError('You can only assign routes that you manage.', 403));
       }
 
-<<<<<<< HEAD
       // ── Pre-populate visitStatuses from route centers ─────────────────────────
       // Sorted by order so the mobile app gets them in visit sequence immediately.
-=======
->>>>>>> dc283fc (Initial commit)
       const visitStatuses = [...route.centers]
          .sort((a, b) => a.order - b.order)
          .map((center) => ({
@@ -113,21 +84,14 @@ export const createAssignment = async (req, res, next) => {
       const assignment = await Assignment.create({
          employeeId,
          routeId,
-<<<<<<< HEAD
          companyId: req.user.companyId, // denormalised from route
-=======
-         companyId: req.user.companyId,
->>>>>>> dc283fc (Initial commit)
          date,
          status: ASSIGNMENT_STATUS.PENDING,
          visitStatuses,
          assignedBy: req.user.sub,
       });
 
-<<<<<<< HEAD
       // Populate for the response so the caller gets names, not just IDs
-=======
->>>>>>> dc283fc (Initial commit)
       await assignment.populate([
          { path: 'employeeId', select: 'name email role' },
          { path: 'routeId', select: 'name centers' },
@@ -149,7 +113,6 @@ export const createAssignment = async (req, res, next) => {
 
 /**
  * Returns a filtered, paginated list of assignments.
-<<<<<<< HEAD
  *
  * Query params:
  *  - date        {string}  ISO date string — filter by assignment date (required for employees)
@@ -164,8 +127,6 @@ export const createAssignment = async (req, res, next) => {
  *  - Manager:  filtered to routes they manage (via a Route lookup).
  *  - Admin:    full company scope.
  *
-=======
->>>>>>> dc283fc (Initial commit)
  * @type {import('express').RequestHandler}
  */
 export const listAssignments = async (req, res, next) => {
@@ -174,23 +135,16 @@ export const listAssignments = async (req, res, next) => {
 
       const filter = { companyId: req.user.companyId };
 
-<<<<<<< HEAD
       // ── Role scoping ──────────────────────────────────────────────────────────
       if (req.user.role === USER_ROLES.EMPLOYEE) {
          // Employees can only see their own assignments
-=======
-      if (req.user.role === USER_ROLES.EMPLOYEE) {
->>>>>>> dc283fc (Initial commit)
          filter.employeeId = req.user.sub;
       } else if (employeeId) {
          filter.employeeId = employeeId;
       }
 
       if (req.user.role === USER_ROLES.MANAGER) {
-<<<<<<< HEAD
          // Scope to routes this manager owns
-=======
->>>>>>> dc283fc (Initial commit)
          const managerRouteIds = await Route.find(
             { companyId: req.user.companyId, managerId: req.user.sub, isActive: true },
             { _id: 1 },
@@ -232,11 +186,8 @@ export const listAssignments = async (req, res, next) => {
 
 /**
  * Returns a single assignment with full route and employee details.
-<<<<<<< HEAD
  * Also computes and attaches a progress summary.
  *
-=======
->>>>>>> dc283fc (Initial commit)
  * @type {import('express').RequestHandler}
  */
 export const getAssignment = async (req, res, next) => {
@@ -263,7 +214,6 @@ export const getAssignment = async (req, res, next) => {
 
 /**
  * Updates the visit status of a single center within an assignment.
-<<<<<<< HEAD
  *
  * This is the hot path — called by the mobile app every time an employee
  * checks in at a center. Designed for maximum write efficiency:
@@ -276,8 +226,6 @@ export const getAssignment = async (req, res, next) => {
  *  - Employees can only update their OWN assignments.
  *  - Admins and managers can update any assignment in scope.
  *
-=======
->>>>>>> dc283fc (Initial commit)
  * @type {import('express').RequestHandler}
  */
 export const updateCenterVisit = async (req, res, next) => {
@@ -288,10 +236,7 @@ export const updateCenterVisit = async (req, res, next) => {
       const assignment = await resolveAssignmentWithAccess(req, next);
       if (!assignment) return;
 
-<<<<<<< HEAD
       // Locate the target visitStatus entry
-=======
->>>>>>> dc283fc (Initial commit)
       const vsIndex = assignment.visitStatuses.findIndex(
          (vs) => String(vs.centerId) === String(centerId),
       );
@@ -300,11 +245,8 @@ export const updateCenterVisit = async (req, res, next) => {
          return next(new AppError('Center not found in this assignment.', 404));
       }
 
-<<<<<<< HEAD
       // ── Build the targeted $set update ───────────────────────────────────────
       // Using the positional operator path avoids rewriting the full array.
-=======
->>>>>>> dc283fc (Initial commit)
       const updateFields = {
          [`visitStatuses.${vsIndex}.status`]: status,
       };
@@ -313,18 +255,12 @@ export const updateCenterVisit = async (req, res, next) => {
          updateFields[`visitStatuses.${vsIndex}.note`] = note;
       }
 
-<<<<<<< HEAD
       // Server-side timestamp — never trust the client clock
-=======
->>>>>>> dc283fc (Initial commit)
       if (status === VISIT_STATUS.VISITED) {
          updateFields[`visitStatuses.${vsIndex}.visitedAt`] = new Date();
       }
 
-<<<<<<< HEAD
       // ── Set startedAt on first check-in ───────────────────────────────────────
-=======
->>>>>>> dc283fc (Initial commit)
       const isFirstCheckIn = !assignment.startedAt &&
          assignment.visitStatuses.every((vs) => vs.status === VISIT_STATUS.PENDING);
 
@@ -333,10 +269,7 @@ export const updateCenterVisit = async (req, res, next) => {
          updateFields.status = ASSIGNMENT_STATUS.IN_PROGRESS;
       }
 
-<<<<<<< HEAD
       // ── Check if this update completes the entire assignment ──────────────────
-=======
->>>>>>> dc283fc (Initial commit)
       const updatedStatuses = assignment.visitStatuses.map((vs, i) =>
          i === vsIndex ? { ...vs.toObject(), status } : vs.toObject(),
       );
@@ -348,10 +281,7 @@ export const updateCenterVisit = async (req, res, next) => {
          updateFields.completedAt = new Date();
       }
 
-<<<<<<< HEAD
       // ── Single atomic write ───────────────────────────────────────────────────
-=======
->>>>>>> dc283fc (Initial commit)
       const updated = await Assignment.findByIdAndUpdate(
          id,
          { $set: updateFields },
@@ -370,19 +300,6 @@ export const updateCenterVisit = async (req, res, next) => {
    }
 };
 
-<<<<<<< HEAD
-// ─── Private Helpers ──────────────────────────────────────────────────────────
-
-/**
- * Resolves an Assignment document with RBAC:
- *  - Must belong to caller's company.
- *  - Employees can only access their own assignments.
- *  - Managers can only access assignments on routes they manage.
- *
- * @param {import('express').Request}       req
- * @param {import('express').NextFunction}  next
- * @returns {Promise<import('mongoose').Document|null>}
-=======
 // ─── POST /assignments/:id/end ────────────────────────────────────────────────
 
 /**
@@ -483,8 +400,14 @@ export const endAssignment = async (req, res, next) => {
 // ─── Private Helpers ──────────────────────────────────────────────────────────
 
 /**
- * Resolves an Assignment document with RBAC.
->>>>>>> dc283fc (Initial commit)
+ * Resolves an Assignment document with RBAC:
+ *  - Must belong to caller's company.
+ *  - Employees can only access their own assignments.
+ *  - Managers can only access assignments on routes they manage.
+ *
+ * @param {import('express').Request}       req
+ * @param {import('express').NextFunction}  next
+ * @returns {Promise<import('mongoose').Document|null>}
  */
 async function resolveAssignmentWithAccess(req, next) {
    const { id } = req.params;
@@ -502,10 +425,7 @@ async function resolveAssignmentWithAccess(req, next) {
       return null;
    }
 
-<<<<<<< HEAD
    // Manager: verify the assignment's route is one they manage
-=======
->>>>>>> dc283fc (Initial commit)
    if (req.user.role === USER_ROLES.MANAGER) {
       const route = await Route.findOne({
          _id: assignment.routeId,
@@ -520,8 +440,6 @@ async function resolveAssignmentWithAccess(req, next) {
 
    return assignment;
 }
-<<<<<<< HEAD
-=======
 
 /**
  * Calculates the Haversine distance between two GPS coordinates in kilometres.
@@ -546,4 +464,3 @@ function haversineKm(lat1, lon1, lat2, lon2) {
 function toRad(deg) {
    return deg * (Math.PI / 180);
 }
->>>>>>> dc283fc (Initial commit)
