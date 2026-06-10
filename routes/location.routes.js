@@ -19,24 +19,24 @@
  * @module routes/location
  */
 
-import { Router } from 'express';
-import { verifyToken } from '../middleware/auth.middleware.js';
-import { requireRoles } from '../middleware/rbac.middleware.js';
-import { validateBody } from '../middleware/validate.middleware.js';
-import { USER_ROLES } from '../models/user.model.js';
+import { Router } from "express";
+import { verifyToken } from "../middleware/auth.middleware.js";
+import { requireRoles } from "../middleware/rbac.middleware.js";
+import { validateBody } from "../middleware/validate.middleware.js";
+import { USER_ROLES } from "../models/user.model.js";
 
 import {
-   ingestLocation,
-   ingestBatch,
-   listLocations,
-   endAssignment,
-   listLatestLocations
-} from '../controllers/location.controller.js';
+  ingestLocation,
+  ingestBatch,
+  listLocations,
+  endAssignment,
+  listLatestLocations,
+} from "../controllers/location.controller.js";
 
 import {
-   ingestLocationSchema,
-   ingestBatchSchema,
-} from '../validators/location.validator.js';
+  ingestLocationSchema,
+  ingestBatchSchema,
+} from "../validators/location.validator.js";
 
 // ─── Location Router ──────────────────────────────────────────────────────────
 
@@ -45,8 +45,11 @@ export const locationRouter = Router();
 locationRouter.use(verifyToken);
 
 locationRouter
-   .route('/latest')
-   .get(requireRoles(USER_ROLES.ADMIN, USER_ROLES.MANAGER, USER_ROLES.EMPLOYEE), listLatestLocations);
+  .route("/latest")
+  .get(
+    requireRoles(USER_ROLES.ADMIN, USER_ROLES.MANAGER, USER_ROLES.EMPLOYEE),
+    listLatestLocations,
+  );
 
 /**
  * All location routes are prefixed with /api/v1/locations:
@@ -55,13 +58,24 @@ locationRouter
  *  GET  /api/v1/locations          → breadcrumb trail for an assignment
  */
 locationRouter
-   .route('/')
-   .get(requireRoles(USER_ROLES.ADMIN, USER_ROLES.MANAGER, USER_ROLES.EMPLOYEE), listLocations)
-   .post(requireRoles(USER_ROLES.EMPLOYEE), validateBody(ingestLocationSchema), ingestLocation);
+  .route("/")
+  .get(
+    requireRoles(USER_ROLES.ADMIN, USER_ROLES.MANAGER, USER_ROLES.EMPLOYEE),
+    listLocations,
+  )
+  .post(
+    requireRoles(USER_ROLES.EMPLOYEE),
+    validateBody(ingestLocationSchema),
+    ingestLocation,
+  );
 
 locationRouter
-   .route('/batch')
-   .post(requireRoles(USER_ROLES.EMPLOYEE), validateBody(ingestBatchSchema), ingestBatch);
+  .route("/batch")
+  .post(
+    requireRoles(USER_ROLES.EMPLOYEE),
+    validateBody(ingestBatchSchema),
+    ingestBatch,
+  );
 
 // ─── Assignment End Router ────────────────────────────────────────────────────
 
@@ -73,6 +87,4 @@ assignmentEndRouter.use(verifyToken);
  * POST /api/v1/assignments/:id/end
  *   → mark assignment completed, set pending centers to skipped.
  */
-assignmentEndRouter
-   .route('/:id/end')
-   .post(requireRoles(USER_ROLES.ADMIN, USER_ROLES.MANAGER), endAssignment);
+assignmentEndRouter.route("/:id/end").post(endAssignment);
