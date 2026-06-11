@@ -32,7 +32,14 @@ export const initFirebaseAdmin = () => {
    if (admin.apps.length > 0) return;
 
    try {
-      const serviceAccount = require('../firebase-service-account.json');
+     let serviceAccount;
+
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+   serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+   serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+} else {
+   serviceAccount = require('../firebase-service-account.json');
+}
 
       admin.initializeApp({
          credential: admin.credential.cert(serviceAccount),
@@ -42,7 +49,6 @@ export const initFirebaseAdmin = () => {
       console.log('✅  Firebase Admin SDK initialised');
    } catch (err) {
       console.error('❌  Firebase Admin SDK init failed:', err.message);
-      console.error('    Make sure firebase-service-account.json exists in project root');
    }
 };
 
